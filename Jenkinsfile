@@ -7,31 +7,44 @@ pipeline {
     }
 
     stages {
+        // שלב 1: הרצת טסטים בסביבת קונטיינר זמנית של פייתון (רצת תמיד ב-Push וב-PR)
         stage('Run Unit Tests') {
             steps {
                 script {
-                    echo "Running unit tests..."
-                    sh "python3 -m unittest test_app.py"
+                    echo "Running unit tests in a temporary Python container..."
+                    
+                    // הרצת קונטיינר פייתון זמני שמריץ את ההתקנה והטסטים על התיקיה הנוכחית במערכת
+                    sh """
+                        docker run --rm -v \$(pwd):/app -w /app python:3.11-slim bash -c "
+                            pip install --upgrade pip
+                            pip install -r requirements.txt
+                            python -m unittest test_app.py
+                        "
+                    """
                 }
             }
         }
 
-        stage('Build & Deploy (Main / Specific Branch Only)') {
+        // שלב 2: בניית הדוקר רק ב-PR ל-main (כפי שהגדרנו קודם)
+        stage('Build Docker Image (PR to Main Only)') {
+            when {
+                expression { env.CHANGE_ID != null && env.CHANGE_TARGET == 'main' }
+            }
             steps {
                 script {
-                    // בדיקה האם אנחנו רצים על בראנץ' main (או בראנץ' ספציפי אחר שמותר לו לבנות דוקר)
-                    // env.BRANCH_NAME או env.GIT_BRANCH תלוי איך הגדרת את המשיכה מגיטהאב
-                    def currentBranch = env.BRANCH_NAME ?: env.GIT_BRANCH ?: "unknown"
-                    
-                    // נקה את שם הבראנץ' אם הוא מגיע בצורה כמו origin/main
-                    if (currentBranch.contains('main')) {
-                        echo "Target branch is main. Building Docker image..."
-                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
-                    } else {
-                        echo "Current branch is '${currentBranch}', skipping Docker build."
-                    }
+                    echo "Building Docker image: ${IMAGE_NAME}:${IMAGE_TAG}..."
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
                 }
             }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
