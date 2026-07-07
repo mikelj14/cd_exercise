@@ -27,7 +27,7 @@ pipeline {
             }
         }
 
-        // שלב 3: תיוג והפקה סופית (רצת אך ורק ב-PR שמכוון ל-main)
+        // שלב 3: תיוג והפקה סופית (רץ אך ורק ב-PR שמכוון ל-main)
         stage('Final Build & Tag (PR to Main Only)') {
             when {
                 expression { env.CHANGE_ID != null && env.CHANGE_TARGET == 'main' }
@@ -35,7 +35,6 @@ pipeline {
             steps {
                 script {
                     echo "Pull Request detected targeting 'main'. Tagging official image: ${IMAGE_NAME}:${IMAGE_TAG}..."
-                    // תיוג גרסה ייחודית לפי מספר הריצה בנוסף ל-latest שכבר קיים
                     sh "docker tag ${IMAGE_NAME}:latest ${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
@@ -44,10 +43,10 @@ pipeline {
     
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline completed successfully! Status sent to GitHub as SUCCESS.'
         }
         failure {
-            echo 'Pipeline failed.'
+            echo 'Pipeline failed. Status sent to GitHub as FAILURE.'
         }
     }
 }
