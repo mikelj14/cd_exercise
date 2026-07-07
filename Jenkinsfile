@@ -11,10 +11,10 @@ pipeline {
         stage('Run Unit Tests in Container') {
             steps {
                 script {
-                    echo "Running unit tests inside the built container..."
+                    echo "Running unit tests using the local latest image..."
                     
-                    // אנחנו מריצים קונטיינר מה-Image שנבנה ודורסים את ה-CMD כדי שיריץ את הטסטים
-                    sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} python -m unittest test_app.py"
+                    // מריצים ישירות על ה-latest שנבנה בשלב הקודם
+                    sh "docker run --rm ${IMAGE_NAME}:latest python -m unittest test_app.py"
                 }
             }
         }
