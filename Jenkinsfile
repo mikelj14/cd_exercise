@@ -4,14 +4,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main',
-                     url: 'https://github.com/mikelj14/cd_exercise.git'
-            }
-        }
-
-
         stage('Install Dependencies') {
             steps {
                 sh '''
