@@ -61,18 +61,13 @@ pipeline {
                 script {
                     echo "Deploying to EC2 server..."
                     
-                    // התחברות לשרת באמצעות SSH בעזרת המפתח ששמרת בג'נקינס
-                    // תחליף את 'ec2-ssh-key' ב-ID של המפתח שלך, ואת 'ubuntu@YOUR_EC2_IP' ביוזר ובכתובת ה-IP של השרת שלך
-                    // (או משתני סביבה שמוגדרים אצלך)
-                    
-                    def ec2Host = '44.211.153.138' // כתובת ה-IP של ה-EC2 שלך
-                    def ec2User = 'ubuntu'             // שם המשתמש בשרת (למשל ubuntu, ec2-user וכו')
+                    def ec2Host = '44.211.153.138' 
+                    def ec2User = 'ubuntu'             
 
-                    // הרצת פקודות ה-Docker מרחוק דרך SSH
-                    // (מומלץ להשתמש ב-sshagent או sshCommand תלוי בפלאגין המותקן אצלך)
-                    sshagent(credentials: ['b7943e0f-cf0c-4a33-8d0f-eda0073045d8']) {
+                    withCredentials([file(credentialsId: 'b7943e0f-cf0c-4a33-8d0f-eda0073045d8', variable: 'SSH_KEY_FILE')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no ${ec2User}@${ec2Host} "\
+                            chmod 600 \$SSH_KEY_FILE
+                            ssh -i \$SSH_KEY_FILE -o StrictHostKeyChecking=no ${ec2User}@${ec2Host} "\
                                 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY_URL} && \
                                 docker pull ${REGISTRY_URL}/${REPOSITORY_NAME}:latest && \
                                 docker stop my-running-app || true && \
