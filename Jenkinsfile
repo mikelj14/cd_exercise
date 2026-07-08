@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = 'my-flask-app'
         IMAGE_TAG  = "${env.BUILD_NUMBER}"
-        EC2_HOST   = 'YOUR_EC2_IP_OR_DNS'
     }
 
     stages {
@@ -42,12 +41,7 @@ pipeline {
             steps {
                 script {
                     echo "Notifying GitHub that the build and tests have passed..."
-                    step([
-                        $class: 'GitHubCommitStatusSetter',
-                        reposSource: [$class: 'ManuallyEnteredRepositorySource', url: 'https://github.com/AyalYe1967/cd_exercise'],
-                        commitShaSource: [$class: 'ManuallyEnteredShaSource', sha: env.GIT_COMMIT],
-                        statusResultSource: [$class: 'ConditionalStatusResultSource', results: [[$class: 'SuccessStatusResult', message: 'Build and Tests Passed!']]]
-                    ])
+                    githubNotify status: 'SUCCESS', description: 'Build and Tests Passed!', context: 'cd_practise_multy'
                 }
             }
         }
@@ -58,13 +52,9 @@ pipeline {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            // תוקן השימוש ב-repo ל-url הנכון
-            step([
-                $class: 'GitHubCommitStatusSetter',
-                reposSource: [$class: 'ManuallyEnteredRepositorySource', url: 'https://github.com/AyalYe1967/cd_exercise'],
-                commitShaSource: [$class: 'ManuallyEnteredShaSource', sha: env.GIT_COMMIT],
-                statusResultSource: [$class: 'ConditionalStatusResultSource', results: [[$class: 'FailureStatusResult', message: 'Build Failed!']]]
-            ])
+            script {
+                githubNotify status: 'FAILURE', description: 'Build Failed!', context: 'cd_practise_multy'
+            }
             echo 'Pipeline failed. Status sent to GitHub as FAILURE.'
         }
     }
