@@ -3,6 +3,7 @@ pipeline {
     agent {
         docker {
             image 'python:3.12'
+            args '-u root'
         }
     }
 
@@ -15,7 +16,6 @@ pipeline {
                 '''
             }
         }
-
 
         stage('Run Unit Tests') {
             steps {
