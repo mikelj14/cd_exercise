@@ -30,12 +30,12 @@ pipeline {
 
         stage('Push to AWS ECR') {
             when {
-                expression { env.CHANGE_ID != null || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
+                expression { (env.CHANGE_ID != null && env.CHANGE_ID != '') || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
                     echo "Logging in to Amazon ECR..."
-                    withCredentials([usernamePassword(credentialsId: 'b6f4c88a-2853-45d6-8a37-eee2bfb73c51', 
+                    withCredentials([usernamePassword(credentialsId: 'your-aws-credential-id', 
                                                       usernameVariable: 'AWS_ACCESS_KEY_ID', 
                                                       passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                         
@@ -55,18 +55,19 @@ pipeline {
 
         stage('Deploy to EC2') {
             when {
-                expression { env.CHANGE_ID != null || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
+                expression { (env.CHANGE_ID != null && env.CHANGE_ID != '') || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
                     echo "Deploying to EC2 server..."
                     
-                    def ec2Host = '44.211.153.138' 
-                    def ec2User = 'ubuntu'             
+                    def ec2Host = '34.239.116.186'
+                    def ec2User = 'ubuntu'            
 
                     withCredentials([file(credentialsId: 'b7943e0f-cf0c-4a33-8d0f-eda0073045d8', variable: 'SSH_KEY_FILE')]) {
                         sh """
                             chmod 600 \$SSH_KEY_FILE
+                            
                             ssh -i \$SSH_KEY_FILE -o StrictHostKeyChecking=no ${ec2User}@${ec2Host} "\
                                 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY_URL} && \
                                 docker pull ${REGISTRY_URL}/${REPOSITORY_NAME}:latest && \
@@ -82,12 +83,12 @@ pipeline {
 
         stage('Notify GitHub Success') {
             when {
-                expression { env.CHANGE_ID != null || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
+                expression { (env.CHANGE_ID != null && env.CHANGE_ID != '') || env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'master' }
             }
             steps {
                 script {
                     echo "Notifying GitHub that the build and tests have passed..."
-                    githubNotify status: 'SUCCESS', description: 'Build, Tests & ECR Push Passed!', context: 'cd_practise_multy'
+                    githubNotify status: 'SUCCESS', description: 'Build, Tests, ECR & Deploy Passed!', context: 'cd_practise_multy'
                 }
             }
         }
@@ -99,7 +100,7 @@ pipeline {
         }
         failure {
             script {
-                if (env.CHANGE_ID != null) {
+                if (env.CHANGE_ID != null && env.CHANGE_ID != '') {
                     githubNotify status: 'FAILURE', description: 'Pipeline Failed!', context: 'cd_practise_multy'
                 }
             }
