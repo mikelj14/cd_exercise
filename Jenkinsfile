@@ -6,7 +6,8 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/mikelj14/cd_exercise.git'
+                git branch: 'main',
+                     url: 'https://github.com/mikelj14/cd_exercise.git'
             }
         }
 
